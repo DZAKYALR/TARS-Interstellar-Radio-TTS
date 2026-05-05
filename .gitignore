@@ -1,0 +1,8 @@
+outputs/
+tmp/
+*.wav
+*.mp3
+*.flac
+.DS_Store
+__pycache__/
+*.pyc

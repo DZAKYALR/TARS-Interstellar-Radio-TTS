@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$HOME/tars-lab"
+PIPER="$ROOT/bin/piper/piper"
+
+TEXT="${1:-Hello Romeo. I am TARS.}"
+VOICE="${2:-tars-v3}"
+SPEAKER="${3:-5}"
+STYLE="${4:-normal}"
+
+MODEL="$ROOT/models/$VOICE/TARS.onnx"
+OUT="$ROOT/outputs/tars_$(date +%Y%m%d_%H%M%S).wav"
+RAW="$ROOT/tmp/raw.wav"
+
+if [ ! -f "$MODEL" ]; then
+  echo "Model not found: $MODEL"
+  exit 1
+fi
+
+echo "$TEXT" | "$PIPER" --model "$MODEL" --speaker "$SPEAKER" --output_file "$RAW" >/dev/null
+
+case "$STYLE" in
+  normal)
+    cp "$RAW" "$OUT"
+    ;;
+  clear)
+    sox "$RAW" "$OUT" gain -n -3 treble 3 bass -2 compand 0.3,1 6:-70,-60,-20 -5 -90 0.2 >/dev/null 2>&1
+    ;;
+  deep)
+    sox "$RAW" "$OUT" gain -n -4 pitch -180 tempo 0.95 treble 2 bass 1 >/dev/null 2>&1
+    ;;
+  heavy)
+    sox "$RAW" "$OUT" gain -n -5 pitch -300 tempo 0.88 bass 2 treble 1 >/dev/null 2>&1
+    ;;
+  fast)
+    sox "$RAW" "$OUT" gain -n -4 pitch 80 tempo 1.08 treble 2 >/dev/null 2>&1
+    ;;
+  radio)
+    sox "$RAW" "$OUT" gain -n -5 highpass 250 lowpass 3500 compand 0.2,1 6:-70,-60,-20 -5 -90 0.2 >/dev/null 2>&1
+    ;;
+  *)
+    echo "Unknown style: $STYLE"
+    echo "Available: normal, clear, deep, heavy, fast, radio"
+    exit 1
+    ;;
+esac
+
+echo "$OUT"
+paplay "$OUT"
